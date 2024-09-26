@@ -6,6 +6,7 @@
 
 #include "Component/AnnotationComponent.h"
 #include "UnrealcvLog.h"
+#include "Runtime/Core/Public/Async/ParallelFor.h"
 
 UAnnotationCamSensor::UAnnotationCamSensor(const FObjectInitializer& ObjectInitializer) :
 	Super(ObjectInitializer)
@@ -73,14 +74,25 @@ void UAnnotationCamSensor::GetAnnotationComponents(UWorld* World, TArray<TWeakOb
 	EInternalObjectFlags ExclusionInternalFlags = EInternalObjectFlags::AllFlags;
 	GetObjectsOfClass(UAnnotationComponent::StaticClass(), UObjectList, bIncludeDerivedClasses, ExclusionFlags, ExclusionInternalFlags);
 
-	for (UObject* Object : UObjectList)
-	{
-		UPrimitiveComponent* Component = Cast<UPrimitiveComponent>(Object);
-
-		if (Component->GetWorld() == World
-		&& !ComponentList.Contains(Component))
+	TArray<TArray<UPrimitiveComponent*>> TempComponentLists;
+	TempComponentLists.SetNum(UObjectList.Num());
+	ParallelFor(UObjectList.Num(), [&](int32 Index)
 		{
-			ComponentList.Add(Component);
+			UObject* Object = UObjectList[Index];
+			UPrimitiveComponent* Component = Cast<UPrimitiveComponent>(Object);
+			if (Component->GetWorld() == World)
+			{
+				TempComponentLists[Index].Add(Component);
+			}
+		});
+	// Clear ComponentList to ensure it's empty before adding new elements
+	ComponentList.Empty();
+	for (const TArray<UPrimitiveComponent*>& TempComponentList : TempComponentLists)
+	{
+		for (UPrimitiveComponent* Component : TempComponentList)
+		{
+			TWeakObjectPtr<UPrimitiveComponent> WeakComponent = Component;
+			ComponentList.Add(WeakComponent);
 		}
 	}
 
@@ -99,12 +111,12 @@ void UAnnotationCamSensor::CaptureSeg(TArray<FColor>& ImageData, int& Width, int
 
 	Capture(ImageData, Width, Height);
 
-	// TODO: Find a faster implementation.
+
 	if (ImageData.Num() != 0)
 	{
-		for (int i = 0; i < Width * Height; i++)
-		{
-			ImageData[i].A = 255;
-		}
+		ParallelFor(Width * Height, [&](int32 i)
+			{
+				ImageData[i].A = 255;
+			});
 	}
 }
