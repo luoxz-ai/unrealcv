@@ -260,11 +260,11 @@ class RunDocker():
             path2env (str): The path to the Unreal environment.
             image (str): The Docker image to use. Default is 'zfw1226/unreal:latest'.
         """
-       self.docker_client = docker.from_env()
-       self.check_image(target_images=image)
-       os.system('xhost +')
-       self.image = image
-       self.path2env = path2env
+        self.docker_client = docker.from_env()
+        self.check_image(target_images=image)
+        os.system('xhost +')
+        self.image = image
+        self.path2env = path2env
 
     def start(self,
               ENV_BIN = '/RealisticRendering_RL/RealisticRendering/Binaries/Linux/RealisticRendering',

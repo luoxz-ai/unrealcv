@@ -7,6 +7,9 @@ import sys
 import threading
 import time
 import os
+from .api import *
+from .automation import *
+from .launcher import *
 
 # try:
 #     from Queue import Queue
@@ -366,8 +369,10 @@ class Client:
     def request_batch_async(self, batch):
         """
         Send a batch of requests to server without waiting for any reply.
+
         batch : list
             a list of requests, each request is a string, such as ['command1', 'command2', ...]
+
         Returns
         -------
         None
