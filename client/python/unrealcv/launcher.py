@@ -325,12 +325,12 @@ class RunDocker():
 
     def get_path2UnrealEnv(self):  # get path to UnrealEnv
         """
-        Get the path to the Unreal environment.
-        Default path to UnrealEnv is in user home directory under .unrealcv
-            Windows: C:\Users\<username>\.unrealcv\UnrealEnv
-            Linux: /home/<username>/.unrealcv/UnrealEnv
-            Mac: /Users/<username>/.unrealcv/UnrealEnv
-        Custom path can be set using the environment variable UnrealEnv.
+            Get the path to the Unreal environment.
+            Default path to UnrealEnv is in user home directory under .unrealcv
+                Windows: C:\\Users\\<username>\\.unrealcv\\UnrealEnv
+                Linux: /home/<username>/.unrealcv/UnrealEnv
+                Mac: /Users/<username>/.unrealcv/UnrealEnv
+            Custom path can be set using the environment variable UnrealEnv.
         """
 
         env_path = os.getenv('UnrealEnv')
