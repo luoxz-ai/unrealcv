@@ -33,8 +33,8 @@ class UnrealCv_API(object):
         #     self.docker = True
         # self.envdir = env
         self.ip = ip
-        self.resolution = resolution
-        self.decoder = MsgDecoder(resolution)
+        self.resolution = resolution # the resolution is not used.
+        self.decoder = MsgDecoder()
         self.checker = ResChecker()
         self.obj_dict = dict()
         self.cam = dict()
@@ -218,7 +218,7 @@ class UnrealCv_API(object):
 
         return img_dirs
 
-    def get_image(self, cam_id, viewmode, mode='bmp', return_cmd=False, show=False):
+    def get_image(self, cam_id, viewmode, mode='bmp', return_cmd=False, show=False, inverse=False):
         """
         Get an image from a camera.
 
@@ -228,7 +228,7 @@ class UnrealCv_API(object):
             mode (str): The image format (e.g., 'bmp', 'png', 'npy'). Default is 'bmp'.
             return_cmd (bool): Whether to return the command instead of executing it. Default is False.
             show (bool): Whether to display the image. Default is False.
-
+            inverse (bool): Whether to inverse the depth. Default is False.
         Returns:
             np.ndarray: The image.
         """
@@ -237,7 +237,7 @@ class UnrealCv_API(object):
         cmd = f'vget /camera/{cam_id}/{viewmode} {mode}'
         if return_cmd:
             return cmd
-        image = self.decoder.decode_img(self.client.request(cmd), mode)
+        image = self.decoder.decode_img(self.client.request(cmd), mode, inverse)
         if show:
             cv2.imshow('image_'+viewmode, image)
             cv2.waitKey(1)
@@ -1112,14 +1112,10 @@ class UnrealCv_API(object):
 
 
 class MsgDecoder(object):
-    def __init__(self, resolution):
+    def __init__(self):
         """
         Initialize the MsgDecoder.
-
-        Args:
-            resolution (tuple): The resolution of the images.
         """
-        self.resolution = resolution
         self.decode_map = {
             'vertex_location': self.decode_vertex,
             'color': self.string2color,
@@ -1289,22 +1285,28 @@ class MsgDecoder(object):
         img = img[:, :, ::-1]  # transpose channel order
         return img
 
-    def decode_bmp(self, res, channel=4):
+    def decode_bmp(self, res):
         """
         Decode a BMP image.
 
         Args:
             res (str): The response string.
-            channel (int): The number of channels. Default is 4.
 
         Returns:
             np.ndarray: The decoded image.
         """
-        # TODO: configurable resolution
-        img = np.fromstring(res, dtype=np.uint8)
-        img = img[-self.resolution[1]*self.resolution[0]*channel:]
-        img = img.reshape(self.resolution[1], self.resolution[0], channel)
-        return img[:, :, :-1]  # delete alpha channel
+        nparr = np.frombuffer(res, np.uint8)
+        
+        # Decode image using OpenCV
+        img = cv2.imdecode(nparr, cv2.IMREAD_UNCHANGED)
+        
+        if img is None:
+            raise ValueError("Failed to decode image data")
+        
+        if len(img.shape) == 3 and img.shape[2] >= 3:
+            img = img[:, :, :3]  # Remove alpha channel if present
+
+        return img
 
     def decode_npy(self, res):
         """
@@ -1321,7 +1323,7 @@ class MsgDecoder(object):
             img = np.expand_dims(img, axis=-1)
         return img
 
-    def decode_depth(self, res, inverse=False, bytesio=True):
+    def decode_depth(self, res, inverse=False):
         """
         Decode a depth image.
 
@@ -1333,12 +1335,7 @@ class MsgDecoder(object):
         Returns:
             np.ndarray: The decoded depth image.
         """
-        if bytesio:
-            depth = np.load(BytesIO(res))
-        else:
-            depth = np.fromstring(res, np.float32)
-            depth = depth[-self.resolution[1] * self.resolution[0]:]
-            depth = depth.reshape(self.resolution[1], self.resolution[0], 1)
+        depth = np.load(BytesIO(res))
         if inverse:
             depth = 1/depth
         return np.expand_dims(depth, axis=-1)
