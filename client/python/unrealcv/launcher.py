@@ -29,15 +29,19 @@ class RunUnreal():
 
         if 'darwin' in sys.platform:
             env_bin_name = self.env_bin.split('/')[1].split('.')[0]
-            self.path2unrealcv = os.path.join(self.path2binary, 'Contents/UE4', env_bin_name, 'Binaries/Mac/unrealcv.ini')
-            self.path2binary = os.path.join(self.path2binary, 'Contents/MacOS', env_bin_name)
+            if os.path.exists(os.path.join(self.path2binary, 'Contents/UE4')): #for mac UE4 binary
+                self.path2unrealcv = os.path.join(self.path2binary, 'Contents/UE4', env_bin_name, 'Binaries/Mac/unrealcv.ini')
+                self.path2binary = os.path.join(self.path2binary, 'Contents/MacOS', env_bin_name)
+            elif os.path.exists(os.path.join(self.path2binary, 'Contents/UE')): #for mac UE5 binary
+                self.path2unrealcv = os.path.join(self.path2binary, 'Contents/UE', env_bin_name,'Binaries/Mac/unrealcv.ini')
+                self.path2binary = os.path.join(self.path2binary, 'Contents/MacOS', env_bin_name)
         else:
             self.path2unrealcv = os.path.join(os.path.split(self.path2binary)[0], 'unrealcv.ini')
         assert os.path.exists(self.path2binary), \
             'Please load env binary in UnrealEnv and Check the env_bin in setting file!'
 
     def start(self, docker=False, resolution=(640, 480), display=None, opengl=False, offscreen=False,
-              nullrhi=False, gpu_id=None, local_host=True, sleep_time=5):
+              nullrhi=False, gpu_id=None, local_host=True, sleep_time=8):
         """
         Start the Unreal Engine environment.
 
@@ -323,7 +327,8 @@ class RunDocker():
         print(self.container.attrs['NetworkSettings']['IPAddress'])
         return self.container.attrs['NetworkSettings']['IPAddress']
 
-    def get_path2UnrealEnv(self):  # get path to UnrealEnv
+    def get_path2UnrealEnv(self):
+        # get path to UnrealEnv
         """
             Get the path to the Unreal environment.
             Default path to UnrealEnv is in user home directory under .unrealcv
@@ -332,7 +337,6 @@ class RunDocker():
                 Mac: /Users/<username>/.unrealcv/UnrealEnv
             Custom path can be set using the environment variable UnrealEnv.
         """
-
         env_path = os.getenv('UnrealEnv')
         if env_path is None:
             # If environment variable not set, create default path in user home directory
