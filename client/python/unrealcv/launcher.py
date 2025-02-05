@@ -1,3 +1,31 @@
+"""UnrealCV launcher module for starting and managing Unreal Engine environments.
+
+This module provides utilities for:
+- Launching Unreal Engine binaries locally or in Docker containers
+- Managing environment configurations
+- Handling multi-GPU setups
+- Supporting headless rendering
+
+The module supports both local and containerized environments across Windows, Linux, and macOS.
+
+Example:
+    >>> from unrealcv.launcher import RunUnreal
+    >>> from unrealcv.api import UnrealCv_API
+    >>> 
+    >>> # Launch local environment
+    >>> launcher = RunUnreal('path/to/UnrealBinary.exe')
+    >>> ip, port = launcher.start()
+    >>> 
+    >>> # Connect API
+    >>> api = UnrealCv_API(port, ip, resolution=(640, 480))
+    >>> 
+    >>> # Use environment...
+    >>> 
+    >>> # Cleanup
+    >>> api.client.disconnect()
+    >>> launcher.close()
+"""
+
 import getpass
 import subprocess
 import atexit
@@ -6,19 +34,38 @@ import docker
 import time
 import sys
 import warnings
-# api for launching UE4/5 binary in docker or local
 
 
 class RunUnreal():
     """
-    Initialize the RunUnreal class.
+    A class to launch and manage Unreal Engine environments.
 
-    Args:
-        ENV_BIN (str): The path to the Unreal Engine binary.
-        ENV_MAP (str, optional): The name of the map/scene. Default is None.
+    Example:
+        >>> # import the package
+        >>> from unrealcv.launcher import RunUnreal
+        >>> from unrealcv.api import UnrealCv_API
+        >>> # Launch a local Unreal environment with the path to the UE binary
+        >>> launcher = RunUnreal('UE5_ExampleScene_Win64\\UE5_ExampleScene_Win64\\Compile_unrealcv5_4\\Binaries\\UE5_ExampleScene_Win64\\Compile_unrealcv5_4.exe')
+        >>> # Launch with default settings
+        >>> ip, port = launcher.start()
+        >>> 
+        >>> # Or launch headless Env in GPU 1 with custom resolution, useful for running in server
+        >>> ip, port = launcher.start(offscreen=True, gpu_id=1, resolution=(640, 480))
+        >>>
+        >>> # Connect to the environment with UnrealCV API
+        >>> unrealcv = UnrealCv_API(port, ip, resolution=(640, 480))
+        >>> # you can call the unrealcv api in the following...
+        >>>
+        >>> # Close the environment
+        >>> unrealcv.client.disconnect()
+        >>> launcher.close()
     """
+
     def __init__(self, ENV_BIN, ENV_MAP=None):
+
+
         if os.path.isabs(ENV_BIN):
+
             self.path2binary = os.path.abspath(ENV_BIN)
             self.path2env, self.env_bin = self.parse_path(ENV_BIN)
         else:
@@ -279,9 +326,9 @@ class RunDocker():
 
     def start(self,
               ENV_BIN = '/RealisticRendering_RL/RealisticRendering/Binaries/Linux/RealisticRendering',
-              ENV_DIR_DOCKER='/UnrealEnv',
+              ENV_DIR_DOCKER='/UnrealEnv', # the path to the Unreal environment in Docker
               options='',
-              host_net=False
+              host_net=False # whether to use host networking
               ):
         """
         Start the Unreal Engine environment in Docker.

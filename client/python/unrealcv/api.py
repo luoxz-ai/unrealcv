@@ -1,3 +1,23 @@
+"""UnrealCV API module for interacting with Unreal Engine.
+
+This module provides a high-level interface for communicating with Unreal Engine through UnrealCV.
+It includes functionality for:
+- Camera control and image capture
+- Object manipulation and querying
+- Environment control
+- Scene configuration
+
+Example:
+    >>> from unrealcv import api
+    >>> client = api.UnrealCv_API(port=9000, ip='127.0.0.1', resolution=(640, 480))
+    >>> # Get an RGB image from camera 0
+    >>> image = client.get_image(0, 'lit')
+    >>> # Get object locations
+    >>> objects = client.get_objects()
+    >>> for obj in objects:
+    >>>     location = client.get_obj_location(obj)
+"""
+
 import unrealcv
 import cv2
 import numpy as np
@@ -27,11 +47,6 @@ class UnrealCv_API(object):
             resolution (tuple): The resolution of the images.
             mode (str): The connection mode, either 'tcp' or 'unix'. Default is 'tcp'. 'unix' is only for local machine in Linux.
         """
-        # if ip == '127.0.0.1':
-        #     self.docker = False
-        # else:
-        #     self.docker = True
-        # self.envdir = env
         self.ip = ip
         self.resolution = resolution # the resolution is not used.
         self.decoder = MsgDecoder()
@@ -1258,9 +1273,9 @@ class MsgDecoder(object):
             res (str): The response string.
             mode (str): The image format (e.g., 'png', 'bmp', 'npy').
             inverse (bool): Whether to inverse the depth. Default is False.
-
         Returns:
             np.ndarray: The decoded image.
+        Note: The depth image should use the 'npy' mode to decode.
         """
         if mode == 'png':
             img = self.decode_png(res)
