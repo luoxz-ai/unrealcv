@@ -121,9 +121,15 @@ class RunUnreal():
         return cmd_exe
 
     def get_path2UnrealEnv(self):  # get path to UnrealEnv
-        import gym_unrealcv
-        gympath = os.path.dirname(gym_unrealcv.__file__)
-        return os.path.join(gympath, 'envs', 'UnrealEnv')
+        env_path = os.getenv('UnrealEnv')
+        if env_path is None:
+            # If environment variable not set, create default path in user home directory
+            default_path = os.path.join(os.path.expanduser('~'), '.unrealcv', 'UnrealEnv')
+            if not os.path.exists(default_path):
+                os.makedirs(default_path)
+            warnings.warn(f'UnrealEnv environment variable not set. Using default path at {default_path}')
+            return default_path
+        return env_path
 
     def parse_path(self, path):
         """
@@ -136,6 +142,7 @@ class RunUnreal():
             tuple: The root path and the binary path.
         """
         part_path = path.split(os.sep)
+        print(part_path)
         id_binaries = part_path.index('Binaries')
         if not part_path[0].startswith('/'):
             part_path[0] = '/' + part_path[0]
@@ -316,10 +323,25 @@ class RunDocker():
         print(self.container.attrs['NetworkSettings']['IPAddress'])
         return self.container.attrs['NetworkSettings']['IPAddress']
 
-    def get_path2UnrealEnv(self):
-        import gym_unrealcv
-        gympath = os.path.dirname(gym_unrealcv.__file__)
-        return os.path.join(gympath, 'envs/UnrealEnv')
+    def get_path2UnrealEnv(self):  # get path to UnrealEnv
+        """
+        Get the path to the Unreal environment.
+        Default path to UnrealEnv is in user home directory under .unrealcv
+            Windows: C:\Users\<username>\.unrealcv\UnrealEnv
+            Linux: /home/<username>/.unrealcv/UnrealEnv
+            Mac: /Users/<username>/.unrealcv/UnrealEnv
+        Custom path can be set using the environment variable UnrealEnv.
+        """
+
+        env_path = os.getenv('UnrealEnv')
+        if env_path is None:
+            # If environment variable not set, create default path in user home directory
+            default_path = os.path.join(os.path.expanduser('~'), '.unrealcv', 'UnrealEnv')
+            if not os.path.exists(default_path):
+                os.makedirs(default_path)
+            warnings.warn(f'UnrealEnv environment variable not set. Using default path at {default_path}')
+            return default_path
+        return env_path
 
     def close(self):
         self.container.remove(force=True)
