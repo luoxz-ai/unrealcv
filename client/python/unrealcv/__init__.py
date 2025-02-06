@@ -10,11 +10,6 @@ import os
 from .api import *
 from .automation import *
 from .launcher import *
-
-# try:
-#     from Queue import Queue
-# except:
-#     from queue import Queue # for Python 3
 from queue import SimpleQueue
 
 
@@ -27,7 +22,7 @@ _L.addHandler(h)
 _L.propagate = False
 _L.setLevel(logging.INFO)
 
-__version__ = '1.0.0'  # add async request, IPC on linux
+__version__ = '1.1.2'  # add async request, IPC on linux
 
 
 class SocketMessage:
@@ -435,7 +430,7 @@ class Client:
         Parameters
         ----------
         message : str
-            command to control the game. More info can be seen from http://docs.unrealcv.org/en/master/reference/commands.html
+            command to control the game. More info can be seen from http://docs.unrealcv.org/en/latest/reference/commands.html
         timeout : int
             when timeout is -1, the request will be sent asynchronously, and no response will be returned
         Returns

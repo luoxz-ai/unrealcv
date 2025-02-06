@@ -12,7 +12,7 @@ Example:
     >>> client = api.UnrealCv_API(port=9000, ip='127.0.0.1', resolution=(640, 480))
     >>> # Get an RGB image from camera 0
     >>> image = client.get_image(0, 'lit')
-    >>> # Get object locations
+    >>> # Get object names and locations
     >>> objects = client.get_objects()
     >>> for obj in objects:
     >>>     location = client.get_obj_location(obj)
@@ -30,8 +30,6 @@ import PIL.Image
 import sys
 from unrealcv.util import ResChecker, time_it
 import warnings
-
-"APIs for UnrealCV, a toolkit for using Unreal Engine (UE) in Python."
 
 class UnrealCv_API(object):
     """
@@ -190,7 +188,13 @@ class UnrealCv_API(object):
 
         Returns:
             list: The list of results.
+        Examples:
+            >>> cmds = ['vget /camera/0/rotation', 'vget /camera/0/location']
+            >>> decoders = [self.decoder.string2floats, self.decoder.string2floats]
+            >>> results = self.batch_cmd(cmds, decoders)
+            >>> print(results)  # [[0, 0, 90], [100.0, 200.0, 300.0]]
         """
+
         res_list = self.client.request(cmds)
         if decoders is None: # vset commands do not decode return
             return res_list
@@ -1127,9 +1131,37 @@ class UnrealCv_API(object):
 
 
 class MsgDecoder(object):
+    """
+    Message decoder for UnrealCV server responses.
+
+    This class provides methods to decode various types of responses from the UnrealCV server,
+    including images, vectors, colors, and other data formats.
+
+    Attributes:
+        decode_map (dict): Mapping of data types to their decoder functions:
+            - vertex_location: Decodes vertex coordinates
+            - color: Decodes RGB color values
+            - rotation: Decodes rotation angles
+            - location: Decodes position coordinates
+            - bounds: Decodes bounding box coordinates
+            - scale: Decodes scale factors
+            - png: Decodes PNG images
+            - bmp: Decodes BMP images
+            - npy: Decodes NumPy array data
+
+    Example:
+        >>> decoder = MsgDecoder()
+        >>> # Decode a color string
+        >>> color = decoder.string2color("(R=255,G=128,B=64)")
+        >>> print(color)  # [255, 128, 64]
+        >>>
+        >>> # Decode position coordinates
+        >>> pos = decoder.string2floats("100.0 200.0 300.0")
+        >>> print(pos)  # [100.0, 200.0, 300.0]
+    """
     def __init__(self):
         """
-        Initialize the MsgDecoder.
+        Initialize the decoder with mapping of data types to decoder functions.
         """
         self.decode_map = {
             'vertex_location': self.decode_vertex,
@@ -1156,15 +1188,18 @@ class MsgDecoder(object):
         return re.split(r'[/\s]+', cmd)[-1]
 
     def decode(self, cmd, res):
-        """
-        Universal decode function.
+        """Universal decode function that selects appropriate decoder based on command.
 
         Args:
-            cmd (str): The command string.
-            res (str): The response string.
+            cmd (str): Command string.
+            res (str): Response data.
 
         Returns:
-            Any: The decoded result.
+            Any: Decoded data in appropriate format.
+
+        Example:
+            >>> res = decoder.decode("vget /object/cube/color", "(R=255,G=128,B=64)")
+            >>> print(res)  # [255, 128, 64]
         """
         key = self.cmd2key(cmd)
         decode_func = self.decode_map.get(key)
@@ -1183,26 +1218,32 @@ class MsgDecoder(object):
         return res.split()
 
     def string2floats(self, res):
-        """
-        Decode a string of numbers into a list of floats.
+        """Convert space-separated string of numbers to float list.
 
         Args:
-            res (str): The response string.
+            res (str): Space-separated numbers string.
 
         Returns:
-            list: The list of floats.
+            list[float]: List of floating point numbers.
+
+        Example:
+            >>> floats = decoder.string2floats("1.0 2.5 3.7")
+            >>> print(floats)  # [1.0, 2.5, 3.7]
         """
         return [float(i) for i in res.split()]
 
     def string2color(self, res):
-        """
-        Decode a color string.
+        """Decode color string to RGB values.
 
         Args:
-            res (str): The response string.
+            res (str): Color string in format "(R=255,G=128,B=64)".
 
         Returns:
-            list: The color as a list of integers [r, g, b].
+            list[int]: RGB color values as [r, g, b].
+
+        Example:
+            >>> color = decoder.string2color("(R=255,G=128,B=64)")
+            >>> print(color)  # [255, 128, 64]
         """
         object_rgba = re.findall(r"\d+\.?\d*", res)
         color = [int(i) for i in object_rgba]  # [r,g,b,a]
@@ -1255,10 +1296,14 @@ class MsgDecoder(object):
         Decode vertex locations.
 
         Args:
-            res (str): The response string.
+            res (str): Multi-line string of vertex coordinates.
 
         Returns:
-            list: The list of vertex locations.
+            list[list[float]]: List of vertex coordinates [x, y, z].
+
+        Example:
+            >>> vertices = decoder.decode_vertex("0.0 0.0 0.0\\n1.0 1.0 1.0")
+            >>> print(vertices)  # [[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]]
         """
         lines = res.split('\n')
         lines = [line.strip() for line in lines]
@@ -1301,14 +1346,16 @@ class MsgDecoder(object):
         return img
 
     def decode_bmp(self, res):
-        """
-        Decode a BMP image.
+        """Decode BMP image data.
 
         Args:
-            res (str): The response string.
+            res (bytes): Raw BMP image data.
 
         Returns:
-            np.ndarray: The decoded image.
+            np.ndarray: RGB image array of shape (H, W, 3) in uint8 format.
+
+        Raises:
+            ValueError: If image decoding fails.
         """
         nparr = np.frombuffer(res, np.uint8)
         
@@ -1345,8 +1392,6 @@ class MsgDecoder(object):
         Args:
             res (str): The response string.
             inverse (bool): Whether to inverse the depth. Default is False.
-            bytesio (bool): Whether to use BytesIO. Default is True.
-
         Returns:
             np.ndarray: The decoded depth image.
         """
