@@ -394,9 +394,13 @@ class UnrealCv_API(object):
         Args:
             cam_id (int): The camera ID.
             fov (float): The field of view.
+        
+        Example:
+            >>> api.set_cam_fov(0, 90) # set the fov of the camera 0 to 90 degrees.
         """
         if fov == self.cam[cam_id]['fov']:
             return fov
+
         cmd = f'vset /camera/{cam_id}/fov {fov}'
         self.client.request(cmd, -1)
         self.cam[cam_id]['fov'] = fov
@@ -575,11 +579,12 @@ class UnrealCv_API(object):
             key (str): The key to press, such as 'Up', 'Down', 'Left', 'Right'
             duration (float): The duration to press the key. Default is 0.01.
 
-        Returns:
-            str: The response from the UnrealCV server.
+        Example:
+            >>> api.set_keyboard('Up', 0.1) # press the up key for 0.1 seconds
+            >>> api.set_keyboard('Left', 0.1) # press the left key for 0.1 seconds
         """
         cmd = 'vset /action/keyboard {key} {duration}'
-        return self.client.request(cmd.format(key=key, duration=duration), -1)
+        self.client.request(cmd.format(key=key, duration=duration), -1)
 
     def get_obj_color(self, obj, return_cmd=False):
         """
@@ -606,6 +611,9 @@ class UnrealCv_API(object):
             obj (str): The object name.
             color (list): The color to set [r, g, b].
             return_cmd (bool): Whether to return the command instead of executing it. Default is False.
+        
+        Example:
+            >>> api.set_obj_color('tree', [255, 0, 0]) # set the color of the tree to red
         """
         [r, g, b] = color
         cmd = f'vset /object/{obj}/color {r} {g} {b}'
@@ -616,19 +624,23 @@ class UnrealCv_API(object):
 
     def set_obj_location(self, obj, loc):
         """
-        Set the location of an object.
+        Set the location of an object in the scene with async mode.
 
         Args:
             obj (str): The object name.
             loc (list): The location to set [x, y, z].
+
+        Example:
+            >>> api.set_obj_location('tree', [100, 200, 300]) # set the location of the tree to [100, 200, 300]
         """
         [x, y, z] = loc
         cmd = f'vset /object/{obj}/location {x} {y} {z}'
         self.client.request(cmd, -1)  # -1 means async mode
 
+
     def set_obj_rotation(self, obj, rot):
         """
-        Set the rotation of an object.
+        Set the rotation of an object in the scene with async mode.
 
         Args:
             obj (str): The object name.
@@ -640,7 +652,7 @@ class UnrealCv_API(object):
 
     def get_mask(self, object_mask, obj, threshold=3):
         """
-        Get the mask of an object.
+        Get the mask of a specific object in the object mask image.
 
         Args:
             object_mask (np.ndarray): The object mask image.
@@ -656,6 +668,7 @@ class UnrealCv_API(object):
         mask = cv2.inRange(object_mask, lower_range, upper_range)
         return mask
 
+
     def get_bbox(self, object_mask, obj, normalize=True):
         """
         Get the bounding box of an object.
@@ -667,12 +680,17 @@ class UnrealCv_API(object):
 
         Returns:
             tuple: The mask and bounding box of the object.
+
+        Example:
+            >>> object_mask = api.get_image(0, 'mask')
+            >>> mask, box = api.get_bbox(object_mask, 'tree')
         """
         width = object_mask.shape[1]
         height = object_mask.shape[0]
         mask = self.get_mask(object_mask, obj)
         nparray = np.array([[[0, 0]]])
         pixelpointsCV2 = cv2.findNonZero(mask)
+
 
         if type(pixelpointsCV2) == type(nparray):  # exist target in image
             x_min = pixelpointsCV2[:, :, 0].min()
@@ -723,6 +741,12 @@ class UnrealCv_API(object):
 
         Returns:
             dict: The color dictionary.
+
+        Example:
+            >>> objects = ['tree', 'house']
+            >>> color_dict = api.build_color_dict(objects)
+            >>> color_dict['tree'] = [255, 0, 0]
+            >>> color_dict['house'] = [0, 255, 0]
         """
         color_dict = dict()
         if batch:
@@ -995,10 +1019,14 @@ class UnrealCv_API(object):
 
         Returns:
             str: The object name of the new object.
+        
+        Example:
+            >>> api.set_new_obj('Cube_C', 'cube_1')
         """
         cmd = f'vset /object/spawn {class_name} {obj_name}'
         res = self.client.request(cmd)
         if self.checker.is_error(res):
+
             warnings.warn(res)
         else:  # add object to the object list, check if new cameras are added
             # assign a random color to the object
@@ -1068,25 +1096,33 @@ class UnrealCv_API(object):
 
     def set_pause(self, return_cmd=False):
         """
-        Pause the game.
+        Pause the game simulation.
 
         Args:
             return_cmd (bool): Whether to return the command instead of executing it. Default is False.
+        
+        Example:
+            >>> api.set_pause() # every object will not move
         """
         cmd = f'vset /action/game/pause'
         if return_cmd:
             return cmd
+
         self.client.request(cmd)
 
     def set_resume(self, return_cmd=False):
         """
-        Resume the game.
+        Resume the game simulation.
 
         Args:
             return_cmd (bool): Whether to return the command instead of executing it. Default is False.
+        
+        Example:
+            >>> api.set_resume() # every object will move again.
         """
         cmd = f'vset /action/game/resume'
         if return_cmd:
+
             return cmd
         self.client.request(cmd)
 
@@ -1278,6 +1314,7 @@ class MsgDecoder(object):
             return float(valuse[0])
         else:
             return [float(i) for i in valuse]
+
     def bpvector2floats(self, res):
         """
         Decode a vector string for blueprint.

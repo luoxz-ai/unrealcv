@@ -13,7 +13,7 @@ Example:
     >>> from unrealcv.api import UnrealCv_API
     >>> 
     >>> # Launch local environment
-    >>> launcher = RunUnreal('path/to/UnrealBinary.exe')
+    >>> launcher = RunUnreal('path/to/UnrealBinary')
     >>> ip, port = launcher.start()
     >>> 
     >>> # Connect API
@@ -21,11 +21,10 @@ Example:
     >>> 
     >>> # Use environment...
     >>> 
-    >>> # Cleanup
+    >>> # Cleanup when finished
     >>> api.client.disconnect()
     >>> launcher.close()
 """
-
 import getpass
 import subprocess
 import atexit
@@ -38,29 +37,41 @@ import warnings
 
 class RunUnreal():
     """
-    A class to launch and manage Unreal Engine environments.
+    Launches and manages Unreal Engine environments with UnrealCV support.
+
+    This class handles:
+    - Local and Docker-based environment launching
+    - Multi-GPU support
+    - Headless rendering
+    - Resolution and port configuration
+    - Cross-platform compatibility
+
+    Args:
+        ENV_BIN (str): The path to the executable Unreal Engine binary.
+        ENV_MAP (str, optional): The name of the Unreal Engine map. Default is None.
 
     Example:
-        >>> # import the package
         >>> from unrealcv.launcher import RunUnreal
         >>> from unrealcv.api import UnrealCv_API
-        >>> # Launch a local Unreal environment with the path to the UE binary
-        >>> launcher = RunUnreal('UE5_ExampleScene_Win64\\UE5_ExampleScene_Win64\\Compile_unrealcv5_4\\Binaries\\UE5_ExampleScene_Win64\\Compile_unrealcv5_4.exe')
-        >>> # Launch with default settings
-        >>> ip, port = launcher.start()
         >>> 
-        >>> # Or launch headless Env in GPU 1 with custom resolution, useful for running in server
-        >>> ip, port = launcher.start(offscreen=True, gpu_id=1, resolution=(640, 480))
-        >>>
-        >>> # Connect to the environment with UnrealCV API
+        >>> # Launch a local Unreal environment
+        >>> launcher = RunUnreal('path/to/UnrealBinary')
+        >>> ip, port = launcher.start()  # Launch with default settings
+        >>> 
+        >>> # Launch headless on GPU 1 with custom resolution
+        >>> ip, port = launcher.start(offscreen=True, 
+        ...                          gpu_id=1,
+        ...                          resolution=(640, 480))
+        >>> 
+        >>> # Connect to environment with UnrealCV API
         >>> unrealcv = UnrealCv_API(port, ip, resolution=(640, 480))
-        >>> # you can call the unrealcv api in the following...
-        >>>
-        >>> # Close the environment
+        >>> 
+        >>> # Use the UnrealCV API...
+        >>> 
+        >>> # Cleanup
         >>> unrealcv.client.disconnect()
         >>> launcher.close()
     """
-
     def __init__(self, ENV_BIN, ENV_MAP=None):
 
 
