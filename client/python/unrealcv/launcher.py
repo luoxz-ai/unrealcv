@@ -33,6 +33,7 @@ import docker
 import time
 import sys
 import warnings
+from unrealcv.util import get_path2UnrealEnv
 
 
 class RunUnreal():
@@ -80,7 +81,7 @@ class RunUnreal():
             self.path2binary = os.path.abspath(ENV_BIN)
             self.path2env, self.env_bin = self.parse_path(ENV_BIN)
         else:
-            self.path2env = self.get_path2UnrealEnv()  # get the path to UnrealEnv in gym-unrealcv
+            self.path2env = get_path2UnrealEnv()  # get the path to UnrealEnv in gym-unrealcv
             self.env_bin = ENV_BIN
             self.path2binary = os.path.abspath(os.path.join(self.path2env, self.env_bin))
         self.env_map = ENV_MAP
@@ -183,6 +184,7 @@ class RunUnreal():
         return cmd_exe
 
     def get_path2UnrealEnv(self):  # get path to UnrealEnv
+        warnings.warn('This function is deprecated, please use get_path2UnrealEnv from unrealcv.util')
         env_path = os.getenv('UnrealEnv')
         if env_path is None:
             # If environment variable not set, create default path in user home directory
@@ -395,6 +397,7 @@ class RunDocker():
                 Mac: /Users/<username>/.unrealcv/UnrealEnv
             Custom path can be set using the environment variable UnrealEnv.
         """
+        warnings.warn('This function is deprecated, please use get_path2UnrealEnv from unrealcv.util')
         env_path = os.getenv('UnrealEnv')
         if env_path is None:
             # If environment variable not set, create default path in user home directory
