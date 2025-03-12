@@ -223,7 +223,7 @@ class RunUnreal():
         else:
             self.env.kill()
             # self.env.terminate()
-            # self.env.wait()
+            self.env.wait()
 
     def signal_handler(self, signum, frame):
         """
